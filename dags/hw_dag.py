@@ -5,14 +5,23 @@ import sys
 from airflow.models import DAG
 from airflow.operators.python import PythonOperator
 
-path = os.path.expanduser('~/airflow_hw')
-# Добавим путь к коду проекта в переменную окружения, чтобы он был доступен python-процессу
-os.environ['PROJECT_PATH'] = path
-# Добавим путь к коду проекта в $PATH, чтобы импортировать функции
-sys.path.insert(0, path)
+# Where the project lives (the folder with modules/, data/, etc.)
+PROJECT_PATH = os.environ.get('PROJECT_PATH', os.path.expanduser('~/airflow_hw'))
+os.environ['PROJECT_PATH'] = PROJECT_PATH
+if PROJECT_PATH not in sys.path:
+    sys.path.insert(0, PROJECT_PATH)
 
-from modules.pipeline import pipeline
-# <YOUR_IMPORTS>
+
+def run_pipeline():
+    # Lazy import so DAG parsing doesn't fail (import only when the task runs)
+    from modules.pipeline import pipeline as _pipeline
+    _pipeline()
+
+
+def run_predict():
+    from modules.predict import predict as _predict
+    _predict()
+
 
 args = {
     'owner': 'airflow',
@@ -23,13 +32,21 @@ args = {
 }
 
 with DAG(
-        dag_id='car_price_prediction',
-        schedule_interval="00 15 * * *",
-        default_args=args,
+    dag_id='car_price_prediction',
+    # 15:00 every day
+    schedule='0 15 * * *',
+    default_args=args,
+    catchup=False,
 ) as dag:
-    pipeline = PythonOperator(
-        task_id='pipeline',
-        python_callable=pipeline,
-    )
-    # <YOUR_CODE>
 
+    pipeline_task = PythonOperator(
+        task_id='pipeline',
+        python_callable=run_pipeline,
+    )
+
+    predict_task = PythonOperator(
+        task_id='predict',
+        python_callable=run_predict,
+    )
+
+    pipeline_task >> predict_task

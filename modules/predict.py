@@ -7,6 +7,7 @@ import pandas as pd
 
 PATH = os.environ.get('PROJECT_PATH', '.')
 
+
 def _load_latest_model():
     models_dir = os.path.join(PATH, 'data', 'models')
     os.makedirs(models_dir, exist_ok=True)
@@ -18,6 +19,7 @@ def _load_latest_model():
         model = dill.load(f)
     return model, latest
 
+
 def _read_test():
     test_dir = os.path.join(PATH, 'data', 'test')
     files = sorted(glob.glob(os.path.join(test_dir, '*.json')))
@@ -26,12 +28,13 @@ def _read_test():
 
     frames = []
     for fp in files:
-        # каждый JSON — одна запись с полями как в train
+        # each JSON is a single record with the same fields as in the training data
         s = pd.read_json(fp, typ='series')
         frames.append(s.to_frame().T)
 
     df = pd.concat(frames, ignore_index=True)
     return df
+
 
 def predict():
     model, _ = _load_latest_model()
@@ -48,6 +51,7 @@ def predict():
     out_path = os.path.join(out_dir, f'predictions_{datetime.now().strftime("%Y%m%d%H%M")}.csv')
     out.to_csv(out_path, index=False)
     print(f'Saved: {out_path}')
+
 
 if __name__ == '__main__':
     predict()
