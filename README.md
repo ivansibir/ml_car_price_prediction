@@ -1,4 +1,4 @@
-Car Price Prediction — ML Pipeline + Airflow (README.txt)
+Car Price Prediction — ML Pipeline + Airflow
 
 OVERVIEW
 This repository provides a reproducible machine-learning pipeline to predict car price (or price category, depending on your target column). It contains:
